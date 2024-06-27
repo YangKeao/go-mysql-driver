@@ -180,6 +180,10 @@ func (c *connector) Connect(ctx context.Context) (driver.Conn, error) {
 		mc.maxWriteSize = mc.maxAllowedPacket
 	}
 
+	if mc.cfg.FetchSize > 0 {
+		mc.fetchSize = mc.cfg.FetchSize
+	}
+
 	// Handle DSN Params
 	err = mc.handleParams()
 	if err != nil {

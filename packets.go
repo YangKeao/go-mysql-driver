@@ -1008,6 +1008,10 @@ func (stmt *mysqlStmt) writeExecutePacket(args []driver.Value) error {
 
 	// flags (0: CURSOR_TYPE_NO_CURSOR) [1 byte]
 	data[9] = 0x00
+	if stmt.fetchSize > 0 {
+		// CURSOR_TYPE_READ_ONLY
+		data[9] = 0x01
+	}
 
 	// iteration_count (uint32(1)) [4 bytes]
 	data[10] = 0x01

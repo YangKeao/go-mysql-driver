@@ -54,6 +54,7 @@ type Config struct {
 	ReadTimeout          time.Duration     // I/O read timeout
 	WriteTimeout         time.Duration     // I/O write timeout
 	Logger               Logger            // Logger
+	FetchSize            uint32            // Fetch size for Cursor Fetch queries
 
 	// boolean fields
 
@@ -338,6 +339,10 @@ func (cfg *Config) FormatDSN() string {
 		writeDSNParam(&buf, &hasParam, "maxAllowedPacket", strconv.Itoa(cfg.MaxAllowedPacket))
 	}
 
+	if cfg.FetchSize != 0 {
+		writeDSNParam(&buf, &hasParam, "fetchSize", strconv.Itoa(int(cfg.FetchSize)))
+	}
+
 	// other params
 	if cfg.Params != nil {
 		var params []string
@@ -515,6 +520,12 @@ func parseDSNParams(cfg *Config, params string) (err error) {
 		// Compression
 		case "compress":
 			return errors.New("compression not implemented yet")
+
+		// FetchSize
+		case "fetchSize":
+			var fetchSize int
+			fetchSize, err = strconv.Atoi(value)
+			cfg.FetchSize = uint32(fetchSize)
 
 		// Enable client side placeholder substitution
 		case "interpolateParams":

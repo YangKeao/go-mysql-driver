@@ -89,7 +89,7 @@ func (d MySQLDriver) Open(dsn string) (driver.Conn, error) {
 
 // This variable can be replaced with -ldflags like below:
 // go build "-ldflags=-X github.com/go-sql-driver/mysql.driverName=custom"
-var driverName = "mysql"
+var driverName = "mysql-with-cursor"
 
 func init() {
 	if driverName != "" {
@@ -115,4 +115,21 @@ func (d MySQLDriver) OpenConnector(dsn string) (driver.Connector, error) {
 		return nil, err
 	}
 	return newConnector(cfg), nil
+}
+
+var _ Connection = (*mysqlConn)(nil)
+
+// Connection is an interface to include many SQL connection interfaces
+type Connection interface {
+	driver.ExecerContext
+	driver.QueryerContext
+	driver.Conn
+}
+
+var _ Statement = (*mysqlStmt)(nil)
+
+// Statement is an interface to include many SQL statement interfaces
+type Statement interface {
+	driver.Stmt
+	driver.StmtQueryContext
 }

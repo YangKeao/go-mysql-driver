@@ -35,6 +35,8 @@ type mysqlConn struct {
 	sequence         uint8
 	parseTime        bool
 
+	fetchSize uint32
+
 	// for context support (Go 1.8+)
 	watching bool
 	watcher  chan<- context.Context
@@ -188,7 +190,8 @@ func (mc *mysqlConn) Prepare(query string) (driver.Stmt, error) {
 	}
 
 	stmt := &mysqlStmt{
-		mc: mc,
+		mc:        mc,
+		fetchSize: mc.fetchSize,
 	}
 
 	// Read Result
@@ -574,7 +577,7 @@ func (stmt *mysqlStmt) QueryContext(ctx context.Context, args []driver.NamedValu
 		stmt.mc.finish()
 		return nil, err
 	}
-	rows.finish = stmt.mc.finish
+	rows.SetFinish(stmt.mc.finish)
 	return rows, err
 }
 

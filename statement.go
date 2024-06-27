@@ -20,6 +20,7 @@ type mysqlStmt struct {
 	mc         *mysqlConn
 	id         uint32
 	paramCount int
+	fetchSize  uint32
 }
 
 func (stmt *mysqlStmt) Close() error {
@@ -93,7 +94,12 @@ func (stmt *mysqlStmt) Query(args []driver.Value) (driver.Rows, error) {
 	return stmt.query(args)
 }
 
-func (stmt *mysqlStmt) query(args []driver.Value) (*binaryRows, error) {
+type RowsWithFinish interface {
+	driver.Rows
+	SetFinish(func())
+}
+
+func (stmt *mysqlStmt) query(args []driver.Value) (RowsWithFinish, error) {
 	if stmt.mc.closed.Load() {
 		stmt.mc.log(ErrInvalidConn)
 		return nil, driver.ErrBadConn
@@ -108,6 +114,20 @@ func (stmt *mysqlStmt) query(args []driver.Value) (*binaryRows, error) {
 
 	// Read Result
 	handleOk := stmt.mc.clearResult()
+
+	if stmt.fetchSize > 0 {
+		// fetchSize is set, server will send us column info
+		resLen, err := handleOk.readResultSetHeaderPacket()
+		if err != nil {
+			return nil, err
+		}
+		columns, err := mc.readColumns(resLen)
+		if err != nil {
+			return nil, err
+		}
+		return &cursorRows{mc: mc, columns: columns, fetchSize: stmt.fetchSize, id: stmt.id}, nil
+	}
+
 	resLen, err := handleOk.readResultSetHeaderPacket()
 	if err != nil {
 		return nil, err

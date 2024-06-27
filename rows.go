@@ -187,6 +187,10 @@ func (rows *mysqlRows) nextNotEmptyResultSet() (int, error) {
 	}
 }
 
+func (rows *mysqlRows) SetFinish(finish func()) {
+	rows.finish = finish
+}
+
 func (rows *binaryRows) NextResultSet() error {
 	resLen, err := rows.nextNotEmptyResultSet()
 	if err != nil {
